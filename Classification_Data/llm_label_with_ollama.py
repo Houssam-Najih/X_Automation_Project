@@ -67,18 +67,18 @@ def main() -> None:
     output_path = args.output or (dataset_cfg.base_dir / dataset_cfg.output_csv)
 
     if not source_path.exists():
-        print(f"❌ Fichier introuvable: {source_path}")
+        print(f" Fichier introuvable: {source_path}")
         sys.exit(1)
 
-    print(f"📥 Lecture: {source_path}")
+    print(f" Lecture: {source_path}")
     df_full = pd.read_csv(source_path, engine="python", sep=dataset_cfg.csv_separator)
 
     if args.sample:
         df = df_full.head(args.sample).copy()
-        print(f"🔎 Échantillon: {len(df)} lignes")
+        print(f" Échantillon: {len(df)} lignes")
     else:
         df = df_full.copy()
-        print(f"🔎 Traitement complet: {len(df)} lignes")
+        print(f" Traitement complet: {len(df)} lignes")
 
     payloads = build_payloads(df)
     if not payloads:
@@ -110,10 +110,10 @@ def main() -> None:
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     out_df.to_csv(output_path, index=False, sep=",", encoding="utf-8")
-    print(f"✅ Export: {output_path}")
+    print(f" Export: {output_path}")
 
     kpi = compute_kpis(out_df)
-    print(f"📈 Réclamations détectées: {kpi.claim_rate:.1f}% ({kpi.total_claims})")
+    print(f" Réclamations détectées: {kpi.claim_rate:.1f}% ({kpi.total_claims})")
 
 
 if __name__ == "__main__":
@@ -441,11 +441,11 @@ def main():
         # Essayer avec point-virgule si la virgule échoue
         try:
             df_full = pd.read_csv(source_path, engine="python", sep=";")
-            print("⚠️  Séparateur détecté: point-virgule (;)")
+            print("  Séparateur détecté: point-virgule (;)")
         except Exception:
             # Essayer avec virgule
             df_full = pd.read_csv(source_path, engine="python", sep=",")
-            print("⚠️  Séparateur détecté: virgule (,)")
+            print("  Séparateur détecté: virgule (,)")
     
     if TEXT_COL not in df_full.columns:
         raise SystemExit(f"Colonne {TEXT_COL} introuvable dans {SOURCE_CSV}. Colonnes disponibles: {list(df_full.columns)}")
@@ -455,12 +455,12 @@ def main():
         df = df_full.head(int(SAMPLE_N)).copy()
         if SAVE_SAMPLE_AS:
             df.to_csv(BASE_DIR / SAVE_SAMPLE_AS, index=False, encoding="utf-8", sep=CSV_SEPARATOR)
-            print(f"💾 Échantillon sauvegardé: {SAVE_SAMPLE_AS} ({len(df)} lignes)")
+            print(f" Échantillon sauvegardé: {SAVE_SAMPLE_AS} ({len(df)} lignes)")
         else:
-            print(f"🔎 Échantillon en mémoire: {len(df)} lignes (non sauvegardé)")
+            print(f" Échantillon en mémoire: {len(df)} lignes (non sauvegardé)")
     else:
         df = df_full.copy()
-        print(f"🔎 Traitement de tout le fichier: {len(df)} lignes")
+        print(f" Traitement de tout le fichier: {len(df)} lignes")
 
     # 0ter) Nettoyage du texte - création de la colonne text_clean
     print("🧹 Nettoyage des textes...")
@@ -506,7 +506,7 @@ def main():
     columns_to_drop = [col for col in COLUMNS_TO_DROP if col in out_df.columns]
     if columns_to_drop:
         out_df = out_df.drop(columns=columns_to_drop)
-        print(f"✅ Colonnes supprimées: {columns_to_drop}")
+        print(f" Colonnes supprimées: {columns_to_drop}")
     
     # Réorganiser les colonnes pour avoir un ordre logique
     # Colonnes principales en premier, puis les métadonnées, puis les classifications
@@ -547,7 +547,7 @@ def main():
             output_path.unlink()
         except (OSError, PermissionError, IOError):
             # Fichier verrouillé, utiliser un nom alternatif
-            print(f"⚠️  Le fichier {output_path.name} est verrouillé, utilisation d'un nom alternatif")
+            print(f"  Le fichier {output_path.name} est verrouillé, utilisation d'un nom alternatif")
             timestamp = int(time.time())
             output_path = BASE_DIR / f"{output_path.stem}_{timestamp}.csv"
     
@@ -556,7 +556,7 @@ def main():
         # Convertir en string pour pandas
         output_str = str(output_path)
         out_df.to_csv(output_str, index=False, sep=',', encoding='utf-8')
-        print(f"✅ Fichier nettoyé et structuré écrit: {output_path}")
+        print(f" Fichier nettoyé et structuré écrit: {output_path}")
         print(f"   Nombre de lignes: {len(out_df)}")
         print(f"   Nombre de colonnes: {len(out_df.columns)}")
     except Exception as e:
@@ -566,10 +566,10 @@ def main():
             temp_dir = Path(tempfile.gettempdir())
             temp_output = temp_dir / output_path.name
             out_df.to_csv(str(temp_output), index=False, sep=',', encoding='utf-8')
-            print(f"✅ Écrit dans le répertoire temporaire: {temp_output}")
+            print(f" Écrit dans le répertoire temporaire: {temp_output}")
             print(f"   Copiez le fichier vers: {output_path}")
         except Exception as e2:
-            print(f"❌ Erreur lors de l'écriture du fichier: {e}")
+            print(f" Erreur lors de l'écriture du fichier: {e}")
             print(f"   Tentative dans le répertoire temporaire a aussi échoué: {e2}")
             import traceback
             traceback.print_exc()
