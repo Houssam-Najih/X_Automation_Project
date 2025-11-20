@@ -193,7 +193,7 @@ Règle spécifique : si un tweet indique qu’un plan/événement (ex: stream, l
 SYSTEM_PROMPT += """
 
 EXEMPLES (OBLIGATOIRE) :
-Tweet: "@redhairsan @freebox @free ca beug aussi chez toi ? t’habites où ?😭"
+Tweet: "@redhairsan @freebox @free ca beug aussi chez toi ? t’habites où ?"
 Réponse: {"is_claim":1,"topics":["mobile"],"sentiment":"neg","urgence":"moyenne","incident":"incident_reseau","confidence":0.9}
 
 Tweet: "coucou @free, ça serait sympa un peu de couverture réseau en côte d'armor dans le futur, on enchaine les zones blanches ici 😅"
