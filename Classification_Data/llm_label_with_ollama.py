@@ -196,7 +196,7 @@ EXEMPLES (OBLIGATOIRE) :
 Tweet: "@redhairsan @freebox @free ca beug aussi chez toi ? t’habites où ?"
 Réponse: {"is_claim":1,"topics":["mobile"],"sentiment":"neg","urgence":"moyenne","incident":"incident_reseau","confidence":0.9}
 
-Tweet: "coucou @free, ça serait sympa un peu de couverture réseau en côte d'armor dans le futur, on enchaine les zones blanches ici 😅"
+Tweet: "coucou @free, ça serait sympa un peu de couverture réseau en côte d'armor dans le futur, on enchaine les zones blanches ici "
 Réponse: {"is_claim":1,"topics":["mobile"],"sentiment":"neg","urgence":"moyenne","incident":"incident_reseau","confidence":0.85}
 
 Tweet: "dites @free, c’est bientôt fini votre cinéma avec les pages perso ?"
