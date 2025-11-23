@@ -537,3 +537,169 @@ else:
     st.info("Aucun tweet SAV pour afficher les histogrammes de volume.")
 
 st.markdown("---")
+
+
+# --------------------------------------------------
+# NUAGE DE MOTS (tweets SAV négatifs)
+# --------------------------------------------------
+st.subheader("Nuage de mots — tweets SAV négatifs")
+
+if len(df_sav) > 0:
+    df_neg = df_sav[df_sav["sentiment"] == "neg"]
+
+    if "full_text" in df_neg.columns and not df_neg["full_text"].dropna().empty:
+        texte_neg = " ".join(df_neg["full_text"].dropna().astype(str)).lower()
+
+        if texte_neg.strip():
+             
+
+            stopwords = set(STOPWORDS)
+
+            # Stopwords FR à exclure du nuage
+            french_stopwords = {
+                  "je", "tu", "il", "elle", "on", "nous", "vous", "ils", "elles",
+                  "me", "moi", "toi", "lui", "leur", "leurs", "se", "ses", "son", "sa",
+                  "mon", "ma", "mes", "tes", "tes", "notre", "nos", "votre", "vos",
+                  "de", "du", "des", "le", "la", "les", "un", "une", "au", "aux",
+                  "et", "ou", "où", "mais", "donc", "or", "ni", "car","n", "depuis","ai",
+                  "à", "en", "dans", "sur", "sous", "chez", "par", "pour", "avec", "sans",
+                  "ne", "pas", "plus", "moins", "rien", "tout", "tous", "toutes", "aucun",
+                  "ce", "cet", "cette", "ces", "ça", "cela", "c'", "qu'", "que", "qui",
+                  "quand", "comme", "si", "bien", "très", "trop", "alors","d","j'ai",
+                  "être", "avoir", "fait", "faire","est","j","co","t","c'est","c",".","suis",
+                  "a", "à", "aaah", "afin", "ah", "ai", "aie", "ainsi", "alors", "après", "assez", "att",
+                    "au", "aucun", "aucune", "aucunement", "aujourd", "aujourd’hui", "auquel", "aussi",
+                    "autant", "autre", "aux", "avaient", "avais", "avait", "avant", "avec", "avez", "avoir",
+                    "avons", "bah", "ben", "beaucoup", "bientôt", "bin", "bonjour", "bonsoir", "bravo",
+                    "bsr", "btw", "bref", "c", "ça", "ca", "car", "ce", "ceci", "cela", "celle", "celui",
+                    "celles", "ceux", "chacun", "chaque", "ci", "comme", "comment", "com", "coucou",
+                    "c'était", "c’est", "c'est", "d", "d’un", "d’une", "d’accord", "d’ailleurs",
+                    "da", "dans", "de", "déjà", "depuis", "des", "devant", "donc", "dont", "du",
+                    "durant", "désole", "désolée", "désolé", "eh", "euh", "eux", "en", "encore", "enfin",
+                    "entre", "erf", "et", "etc", "été", "être", "faut", "fois", "font", "fut", "future",
+                    "genre", "grâce", "ha", "hello", "hey", "hi", "hop", "hum", "il", "ils",
+                    "j", "j’avoue", "j’ai", "j’avais", "j’étais", "j’ai eu", "je", "joli",
+                    "jusqu", "juste", "l", "la", "le", "les", "leur", "leurs", "là", "loool",
+                    "lol", "loool", "lmao", "mdr", "mdrr", "mdrrrr", "mais", "malgré", "me",
+                    "merci", "mes", "met", "moi", "moins", "mon", "moyen", "mtn", "même", "mêmes",
+                    "nan", "ne", "néanmoins", "ni", "non", "nope", "notre", "nous", "nouveau",
+                    "nouvelles", "on", "ont", "ou", "où", "ouais", "oui", "oula", "par", "parce",
+                    "parfois", "parmi", "pas", "peine", "peu", "peut", "peut-être", "pff", "pfff",
+                    "pffff", "plein", "plus", "plutôt", "pour", "pourquoi", "près", "presque",
+                    "ptdr", "ptdrr", "qd", "qu", "quand", "quant", "que", "quel", "quelle", "quelles",
+                    "quelque", "quelques", "quelqu’un", "qui", "quoi", "s", "sa", "sans", "se", "serait",
+                    "ses", "si", "slt", "soir", "soit", "sont", "souvent", "ss", "stp", "svp", "sur",
+                    "surtout", "ta", "t’as", "t’es", "ta", "tandis", "tant", "te", "tellement", "tes",
+                    "toi", "ton", "tous", "tout", "toute", "toutes", "trop", "très", "tu", "tkt", "uh",
+                    "un", "une", "v", "vers", "via", "vous", "vu", "wesh", "wow", "xd", "y", "y’a",
+                    "y a", "ya", "yo", "zéro", "zut",
+                    "rt", "via", "cc", "pls", "svp", "stp", "svp", "pq", "pk", "pr", "dsl", "desolé",
+                    "desolée", "desole", "dm", "msg", "tweet", "tweets", "lol", "mdr", "ptdr",
+                    "oups", "arf", "bah", "euh", "heu",
+
+                  # mots peu utiles dans les tweets
+                  "rt", "https", "http", "www", "com",
+                  "bonjour", "bonsoir", "merci", "svp",
+                  "free", "freebox", "freemobile", "free_1337"  #ça pollue trop
+               }
+
+            stopwords.update(french_stopwords)
+
+
+            wc = WordCloud(
+                width=800,
+                height=400,
+                background_color="white",
+                stopwords=stopwords,
+                collocations=False
+            ).generate(texte_neg)
+
+            fig_wc, ax = plt.subplots(figsize=(10, 5))
+            ax.imshow(wc, interpolation="bilinear")
+            ax.axis("off")
+
+            st.pyplot(fig_wc)
+        else:
+            st.info("Pas assez de texte pour générer un nuage de mots négatifs.")
+    else:
+        st.info("La colonne 'full_text' est absente ou vide, impossible de générer un nuage de mots.")
+else:
+    st.info("Aucun tweet SAV pour afficher un nuage de mots.")
+
+st.markdown("---")
+
+# --------------------------------------------------
+# CARTOGRAPHIE THÉMATIQUE (types de souci)
+# --------------------------------------------------
+st.subheader("Cartographie thématique des types de souci")
+
+if len(df_sav) > 0:
+    # On retire les valeurs manquantes sur incident / topic
+    df_them = df_sav.dropna(subset=["incident", "topic_main"]).copy()
+
+    if len(df_them) > 0:
+        # On agrège pour obtenir un volume (nombre de tweets SAV) par couple incident / topic
+        df_them_grp = (
+            df_them
+            .groupby(["incident", "topic_main"])["id"]
+            .count()
+            .reset_index(name="nb_tweets")
+        )
+
+        fig_theme = px.treemap(
+            df_them_grp,
+            path=["incident", "topic_main"],
+            values="nb_tweets",  # ✅ valeur numérique
+            title="Cartographie des incidents par thème (nombre de tweets SAV)",
+        )
+        fig_theme = apply_free_layout(fig_theme)
+        st.plotly_chart(fig_theme, use_container_width=True)
+    else:
+        st.info("Pas assez de données (incident / topic) pour construire la cartographie.")
+else:
+    st.info("Aucun tweet SAV pour afficher la cartographie thématique.")
+
+st.markdown("---")
+
+# --------------------------------------------------
+# KPI TEMPS DE RÉPONSE (Manager + Data analyst uniquement)
+# --------------------------------------------------
+if profil in ["Manager", "Data analyst"]:
+    st.subheader("Temps de réponse du SAV Free")
+
+    if not df_replies.empty and len(df_sav) > 0:
+        first_reply, mean_delay, median_delay = compute_response_time(df_sav, df_replies)
+
+        if mean_delay is not None:
+            col_tr1, col_tr2 = st.columns(2)
+
+            with col_tr1:
+                st.metric("Temps moyen de réponse", minutes_to_dhm(mean_delay))
+
+            with col_tr2:
+                st.metric("Temps médian de réponse", minutes_to_dhm(median_delay))
+
+            with st.expander("Voir quelques exemples de délais de réponse"):
+                df_display = first_reply[[
+                    "in_reply_to",
+                    "created_at_client",
+                    "created_at_reply",
+                    "delay_minutes"
+                ]].copy()
+
+                df_display["Délai"] = df_display["delay_minutes"].apply(minutes_to_dhm)
+                df_display = df_display.drop(columns=["delay_minutes"])
+
+                df_display = df_display.rename(columns={
+                    "in_reply_to": "Tweet client (ID)",
+                    "created_at_client": "Date tweet client",
+                    "created_at_reply": "Date réponse Free",
+                })
+
+                st.dataframe(df_display, use_container_width=True)
+        else:
+            st.info("Aucune correspondance entre tweets clients et réponses Free sur la période filtrée.")
+    else:
+        st.info("Impossible de calculer le temps de réponse (fichier réponses manquant ou aucun tweet SAV).")
+
+    st.markdown("---")
