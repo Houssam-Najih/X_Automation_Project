@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 # ==========================
 # PALETTE FREE
 # ==========================
-FREE_PRIMARY = "#E60000"   # rouge Free
+FREE_PRIMARY = "#E60000"   
 FREE_SECONDARY = "#FF7043"
 FREE_DARK = "#B71C1C"
 
@@ -184,7 +184,7 @@ def compute_response_time(df_clients: pd.DataFrame, df_replies: pd.DataFrame):
         suffixes=("_reply", "_client")
     )
 
-    # 🔧 Sécuriser les types de dates AVANT la soustraction
+    # Sécuriser les types de dates AVANT la soustraction
     merged["created_at_reply"] = pd.to_datetime(merged["created_at_reply"], errors="coerce")
     merged["created_at_client"] = pd.to_datetime(merged["created_at_client"], errors="coerce")
 
@@ -254,3 +254,286 @@ profil = st.sidebar.radio(
     ["Manager", "Data analyst", "Agent SAV"],
     index=0
 )
+
+# --------------------------------------------------
+# SIDEBAR : FILTRES
+# --------------------------------------------------
+st.sidebar.markdown("---")
+st.sidebar.title("Filtres")
+
+min_date = df["date"].min()
+max_date = df["date"].max()
+
+date_range = st.sidebar.date_input(
+    "Période",
+    value=(min_date, max_date),
+    min_value=min_date,
+    max_value=max_date
+)
+
+if isinstance(date_range, tuple):
+    start_date, end_date = date_range
+else:
+    start_date = date_range
+    end_date = date_range
+
+df = df[(df["date"] >= start_date) & (df["date"] <= end_date)]
+
+topics = sorted(df["topic_main"].dropna().unique().tolist())
+sentiments = sorted(df["sentiment"].dropna().unique().tolist())
+incidents = sorted(df["incident"].dropna().unique().tolist())
+urgences = sorted(df["urgence"].dropna().unique().tolist())
+
+topic_options = ["Tous"] + topics
+sentiment_options = ["Tous"] + sentiments
+incident_options = ["Tous"] + incidents
+urgence_options = ["Tous"] + urgences
+
+selected_topic = st.sidebar.selectbox("Thème (topic)", topic_options)
+selected_sentiment = st.sidebar.selectbox("Sentiment", sentiment_options)
+selected_incident = st.sidebar.selectbox("Type d'incident", incident_options)
+selected_urgence = st.sidebar.selectbox("Niveau d'urgence", urgence_options)
+
+if selected_topic != "Tous":
+    df = df[df["topic_main"] == selected_topic]
+
+if selected_sentiment != "Tous":
+    df = df[df["sentiment"] == selected_sentiment]
+
+if selected_incident != "Tous":
+    df = df[df["incident"] == selected_incident]
+
+if selected_urgence != "Tous":
+    df = df[df["urgence"] == selected_urgence]
+
+df_sav = df[df["is_claim"] == 1]
+
+# --------------------------------------------------
+# HEADER
+# --------------------------------------------------
+st.title("Analyse des tweets SAV Free")
+st.markdown(
+    f"Vue actuelle : **{profil}** — tableau de bord filtré selon les options ci-dessus."
+)
+
+# --------------------------------------------------
+# KPI GLOBAUX (Manager + Data Analyst uniquement)
+# --------------------------------------------------
+if profil in ["Manager", "Data analyst"]:
+
+    st.subheader("Indicateurs généraux")
+
+    col1, col2, col3 = st.columns(3)
+
+    total_tweets = len(df)
+    total_sav = int(df_sav["is_claim"].sum())
+    taux_sav = (total_sav / total_tweets * 100) if total_tweets > 0 else 0
+
+    with col1:
+        st.metric("Tweets analysés", f"{total_tweets:,}".replace(",", " "))
+
+    with col2:
+        st.metric("Tweets SAV (réclamations)", f"{total_sav:,}".replace(",", " "))
+
+    with col3:
+        st.metric("Part de tweets SAV (réclamations)", f"{taux_sav:.1f} %")
+
+    st.markdown("---")
+
+# --------------------------------------------------
+# CAMEMBERT SENTIMENT (Manager + Data Analyst uniquement)
+# --------------------------------------------------
+if profil in ["Manager", "Data analyst"]:
+
+    st.subheader("Répartition des sentiments (tweets SAV)")
+
+    if len(df_sav) > 0:
+        sent_counts = (
+            df_sav.groupby("sentiment")["id"]
+            .count()
+            .reset_index(name="nb")
+        )
+
+        fig_pie_sent = px.pie(
+            sent_counts,
+            names="sentiment",
+            values="nb",
+            title="Sentiments des tweets SAV",
+            color="sentiment",
+            color_discrete_map=FREE_SENTIMENT_MAP,
+        )
+        fig_pie_sent = apply_free_layout(fig_pie_sent)
+        st.plotly_chart(fig_pie_sent, use_container_width=True)
+    else:
+        st.info("Aucun tweet SAV pour calculer la répartition des sentiments.")
+
+    st.markdown("---")
+
+# --------------------------------------------------
+# URGENCES (Tout le monde)
+# --------------------------------------------------
+st.subheader("Répartition des niveaux d'urgence (tweets SAV)")
+
+if len(df_sav) > 0:
+    urg_counts = (
+        df_sav.groupby("urgence")["id"]
+        .count()
+        .reset_index(name="nb")
+    )
+
+    fig_urg = px.bar(
+        urg_counts,
+        x="urgence",
+        y="nb",
+        color="urgence",
+        color_discrete_map=FREE_URGENCE_MAP,
+        title="Tweets SAV par niveau d'urgence",
+        labels={"urgence": "Niveau d'urgence", "nb": "Tweets SAV"}
+    )
+    fig_urg = apply_free_layout(fig_urg)
+    st.plotly_chart(fig_urg, use_container_width=True)
+else:
+    st.info("Aucune réclamation pour afficher l'urgence.")
+
+st.markdown("---")
+
+# --------------------------------------------------
+# TOP 5 INCIDENTS (Tout le monde)
+# --------------------------------------------------
+st.subheader("Top 5 des incidents")
+
+if len(df_sav) > 0:
+    inc_counts = (
+        df_sav.groupby("incident")["id"]
+        .count()
+        .reset_index(name="nb")
+        .sort_values("nb", ascending=False)
+        .head(5)
+    )
+
+    fig_inc_top5 = px.bar(
+        inc_counts,
+        x="incident",
+        y="nb",
+        title="Top 5 incidents les plus fréquents",
+        labels={"incident": "Incident", "nb": "Tweets SAV"},
+        color_discrete_sequence=[FREE_PRIMARY]
+    )
+    fig_inc_top5 = apply_free_layout(fig_inc_top5)
+    st.plotly_chart(fig_inc_top5, use_container_width=True)
+else:
+    st.info("Aucune réclamation pour afficher les incidents.")
+
+st.markdown("---")
+
+# --------------------------------------------------
+# VOLUME PAR JOUR ET PAR SEMAINE (Tout le monde)
+# --------------------------------------------------
+st.subheader("Volume de tweets SAV par jour et par semaine")
+
+if len(df_sav) > 0:
+    # Volume par jour
+    volume_jour = (
+        df_sav.groupby("date")["id"]
+        .count()
+        .reset_index(name="nb_tweets")
+        .sort_values("date")
+    )
+
+    # Volume par semaine
+    volume_semaine = (
+        df_sav.groupby("week")["id"]
+        .count()
+        .reset_index(name="nb_tweets")
+        .sort_values("week")
+    )
+
+    col_v1, col_v2 = st.columns(2)
+
+    with col_v1:
+        fig_vol_jour = px.line(
+            volume_jour,
+            x="date",
+            y="nb_tweets",
+            title="Volume quotidien de tweets SAV",
+            labels={"date": "Date", "nb_tweets": "Tweets SAV"},
+            markers=True,
+            color_discrete_sequence=[FREE_PRIMARY]
+        )
+        fig_vol_jour = apply_free_layout(fig_vol_jour)
+        st.plotly_chart(fig_vol_jour, use_container_width=True)
+
+    with col_v2:
+        fig_vol_semaine = px.bar(
+            volume_semaine,
+            x="week",
+            y="nb_tweets",
+            title="Volume hebdomadaire de tweets SAV",
+            labels={"week": "Semaine (lundi)", "nb_tweets": "Tweets SAV"},
+            color_discrete_sequence=[FREE_PRIMARY]
+        )
+        fig_vol_semaine = apply_free_layout(fig_vol_semaine)
+        st.plotly_chart(fig_vol_semaine, use_container_width=True)
+else:
+    st.info("Aucun tweet SAV sur la période sélectionnée.")
+
+st.markdown("---")
+
+# --------------------------------------------------
+# HISTOGRAMMES DE VOLUME (heure, jour de semaine)
+# --------------------------------------------------
+st.subheader("Histogrammes de volume des tweets SAV")
+
+if len(df_sav) > 0:
+    col_h1, col_h2 = st.columns(2)
+
+    # Volume par heure de la journée
+    with col_h1:
+        vol_hour = (
+            df_sav.groupby("hour")["id"]
+            .count()
+            .reset_index(name="nb_tweets")
+            .sort_values("hour")
+        )
+        fig_h_hour = px.bar(
+            vol_hour,
+            x="hour",
+            y="nb_tweets",
+            title="Volume de tweets SAV par heure",
+            labels={"hour": "Heure", "nb_tweets": "Tweets SAV"},
+            color_discrete_sequence=[FREE_PRIMARY]
+        )
+        fig_h_hour = apply_free_layout(fig_h_hour)
+        st.plotly_chart(fig_h_hour, use_container_width=True)
+
+    # Volume par jour de la semaine
+    with col_h2:
+        vol_dow = (
+            df_sav.groupby("day_of_week")["id"]
+            .count()
+            .reset_index(name="nb_tweets")
+        )
+
+        order_days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        vol_dow["day_of_week"] = pd.Categorical(
+            vol_dow["day_of_week"],
+            categories=order_days,
+            ordered=True
+        )
+
+        vol_dow = vol_dow.sort_values("day_of_week")
+
+        fig_h_dow = px.bar(
+            vol_dow,
+            x="day_of_week",
+            y="nb_tweets",
+            title="Volume de tweets SAV par jour de la semaine",
+            labels={"day_of_week": "Jour", "nb_tweets": "Tweets SAV"},
+            color_discrete_sequence=[FREE_PRIMARY]
+        )
+        fig_h_dow = apply_free_layout(fig_h_dow)
+        st.plotly_chart(fig_h_dow, use_container_width=True)
+else:
+    st.info("Aucun tweet SAV pour afficher les histogrammes de volume.")
+
+st.markdown("---")
