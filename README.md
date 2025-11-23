@@ -1,4 +1,4 @@
-# README — Pipeline d’Analyse Automatisée des Tweets Free
+# Pipeline d’Analyse Automatisée des Tweets Free
 
 **API Twitter → Nettoyage n8n → LLM Mistral Few-Shot Retriever → Réponse Auto → Chatbot → Ticketing**
 
